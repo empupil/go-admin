@@ -2,7 +2,10 @@ package apis
 
 import (
 	"fmt"
-	
+	"github.com/xuri/excelize/v2"
+	"go-admin/common/utils"
+	"reflect"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-admin-team/go-admin-core/sdk/api"
@@ -31,7 +34,7 @@ type SysPost struct {
 // @Security Bearer
 func (e SysPost) GetPage(c *gin.Context) {
 	s := service.SysPost{}
-	req :=dto.SysPostPageReq{}
+	req := dto.SysPostPageReq{}
 	err := e.MakeContext(c).
 		MakeOrm().
 		Bind(&req, binding.Form).
@@ -65,7 +68,7 @@ func (e SysPost) GetPage(c *gin.Context) {
 // @Security Bearer
 func (e SysPost) Get(c *gin.Context) {
 	s := service.SysPost{}
-	req :=dto.SysPostGetReq{}
+	req := dto.SysPostGetReq{}
 	err := e.MakeContext(c).
 		MakeOrm().
 		Bind(&req, nil).
@@ -99,7 +102,7 @@ func (e SysPost) Get(c *gin.Context) {
 // @Security Bearer
 func (e SysPost) Insert(c *gin.Context) {
 	s := service.SysPost{}
-	req :=dto.SysPostInsertReq{}
+	req := dto.SysPostInsertReq{}
 	err := e.MakeContext(c).
 		MakeOrm().
 		Bind(&req, binding.JSON).
@@ -131,7 +134,7 @@ func (e SysPost) Insert(c *gin.Context) {
 // @Security Bearer
 func (e SysPost) Update(c *gin.Context) {
 	s := service.SysPost{}
-	req :=dto.SysPostUpdateReq{}
+	req := dto.SysPostUpdateReq{}
 	err := e.MakeContext(c).
 		MakeOrm().
 		Bind(&req, binding.JSON, nil).
@@ -163,7 +166,7 @@ func (e SysPost) Update(c *gin.Context) {
 // @Security Bearer
 func (e SysPost) Delete(c *gin.Context) {
 	s := service.SysPost{}
-	req :=dto.SysPostDeleteReq{}
+	req := dto.SysPostDeleteReq{}
 	err := e.MakeContext(c).
 		MakeOrm().
 		Bind(&req, binding.JSON).
@@ -181,4 +184,47 @@ func (e SysPost) Delete(c *gin.Context) {
 		return
 	}
 	e.OK(req.GetId(), "删除成功")
+}
+
+func (e SysPost) Export(c *gin.Context) {
+	s := service.SysPost{}
+	req := dto.SysPostPageReq{}
+	err := e.MakeContext(c).
+		MakeOrm().
+		Bind(&req, binding.Form).
+		MakeService(&s.Service).
+		Errors
+	if err != nil {
+		e.Logger.Error(err)
+		e.Error(500, err, err.Error())
+		return
+	}
+
+	list := make([]models.SysPost, 0)
+	var count int64
+
+	err = s.GetPage(&req, &list, &count)
+	if err != nil {
+		e.Error(500, err, "查询失败")
+		return
+	}
+	var newList []map[string]interface{}
+	for _, item := range list {
+		itemMap := map[string]interface{}{
+			"PostId":   item.PostId,
+			"PostName": item.PostName,
+		}
+		newList = append(newList, itemMap)
+	}
+	t := reflect.TypeOf(models.SysPost{})
+	file, err := utils.WriteExcel("", t, newList)
+	Write(c, "岗位.xlsx", file)
+}
+
+// Write 封装返回文件流
+func Write(ctx *gin.Context, fileName string, file *excelize.File) {
+	ctx.Writer.Header().Add("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	ctx.Writer.Header().Add("Content-disposition", "attachment;filename="+fileName)
+	ctx.Writer.Header().Add("Content-Transfer-Encoding", "binary")
+	_ = file.Write(ctx.Writer)
 }

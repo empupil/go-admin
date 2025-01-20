@@ -38,6 +38,7 @@ var (
 		Example:      "go-admin server -c config/settings.yml",
 		SilenceUsage: true,
 		PreRun: func(cmd *cobra.Command, args []string) {
+			//做一些配置类的的操作类问题 初始化配置文件，初始化数据库，初始化其他配置等
 			setup()
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -181,6 +182,7 @@ func initRouter() {
 		Use(common.RequestId(pkg.TrafficKey)).
 		Use(api.SetRequestLogger)
 
+	//http请求的过程中进行处理
 	common.InitMiddleware(r)
 
 }

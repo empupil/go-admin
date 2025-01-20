@@ -38,19 +38,21 @@ func setupSimpleDatabase(host string, c *toolsConfig.Database) {
 			c.Registers[i].Tables)
 	}
 	resolverConfig := toolsDB.NewConfigure(c.Source, c.MaxIdleConns, c.MaxOpenConns, c.ConnMaxIdleTime, c.ConnMaxLifeTime, registers)
-	db, err := resolverConfig.Init(&gorm.Config{
-		NamingStrategy: schema.NamingStrategy{
-			SingularTable: true,
-		},
-		Logger: New(
-			logger.Config{
-				SlowThreshold: time.Second,
-				Colorful:      true,
-				LogLevel: logger.LogLevel(
-					log.DefaultLogger.Options().Level.LevelForGorm()),
+	db, err := resolverConfig.Init(
+		&gorm.Config{
+			NamingStrategy: schema.NamingStrategy{
+				SingularTable: true,
 			},
-		),
-	}, opens[c.Driver])
+			Logger: New(
+				logger.Config{
+					SlowThreshold: time.Second,
+					Colorful:      true,
+					LogLevel: logger.LogLevel(
+						log.DefaultLogger.Options().Level.LevelForGorm()),
+				},
+			),
+		},
+		opens[c.Driver])
 
 	if err != nil {
 		log.Fatal(pkg.Red(c.Driver+" connect error :"), err)
