@@ -1,8 +1,11 @@
 package router
 
 import (
+	"embed"
+	"fmt"
 	"go-admin/app/admin/apis"
 	"mime"
+	"net/http"
 
 	"github.com/go-admin-team/go-admin-core/sdk/config"
 
@@ -13,12 +16,22 @@ import (
 
 	swaggerfiles "github.com/swaggo/files"
 
+	"github.com/gin-contrib/static"
 	"go-admin/common/middleware"
 	"go-admin/common/middleware/handler"
 	_ "go-admin/docs/admin"
 )
 
+//go:embed  dist
+var front embed.FS
+
 func InitSysRouter(r *gin.Engine, authMiddleware *jwt.GinJWTMiddleware) *gin.RouterGroup {
+	// 添加以下代码 start
+	r.Use(static.Serve("/", static.EmbedFolder(front, "dist")))
+	r.NoRoute(func(c *gin.Context) {
+		fmt.Printf("%s doesn't exists, redirect on /\n", c.Request.URL.Path)
+		c.Redirect(http.StatusMovedPermanently, "/")
+	})
 	g := r.Group("")
 	sysBaseRouter(g)
 	// 静态文件
